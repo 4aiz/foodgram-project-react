@@ -10,8 +10,8 @@ from .views import (TitlesViewSet,
 from users import views
 
 routerv1 = DefaultRouter()
-routerv1.register(r'titles', TitlesViewSet, basename='titles')
-routerv1.register(r'genres', GenresViewSet, basename='genres')
+routerv1.register(r'recipe', TitlesViewSet, basename='titles')
+routerv1.register(r'', GenresViewSet, basename='genres')
 routerv1.register(r'categories', CategoriesViewSet, basename='categories')
 routerv1.register(
     r'^titles/(?P<title_id>\d+)/reviews', ReviewViewset, basename='reviews'
