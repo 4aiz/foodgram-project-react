@@ -6,12 +6,27 @@ from users.models import User
 class Tag(models.Model):
     name = models.CharField(max_length=256, db_index=True,
                             verbose_name='Имя тега',
-                            help_text='Укажите имя тега')
-    color = models.CharField(max_length=16)  # check this field in kittygram project in SERIALIZER
+                            help_text='Укажите имя тега',
+                            unique=True)
+    color = models.CharField(max_length=16)
     slug = models.SlugField('Индификатор', unique=True)
 
     def __str__(self):
         return self.name
+
+
+class Ingredient(models.Model):
+    name = models.CharField(
+        max_length=200, verbose_name='Название ингредиента'
+    )
+    measurement_unit = models.CharField(
+        max_length=200,
+        verbose_name='Единица измерения',
+        help_text='Укажите единицу измерения'
+    )
+
+    def __str__(self):
+        return f'{self.name} ({self.measurement_unit})'
 
 
 class Recipe(models.Model):
@@ -20,28 +35,62 @@ class Recipe(models.Model):
         on_delete=models.CASCADE,
         related_name='recipes'
     )
-    tag = models.ManyToManyField(
-        Tag, verbose_name='Тэг',
+    tags = models.ManyToManyField(
+        Tag, verbose_name='Тег',
         blank=True,
         related_name='recipes'
     )
-    name = models.CharField(max_length=256, db_index=True,
-                            verbose_name='Название блюда',
-                            help_text='Укажите название блюда')
-    image = models.ImageField(upload_to='recipe/images/')  # IDK NEED TO SEARCH
-    description = models.TextField(blank=True, verbose_name='Описание рецепта')
-    ingredients = models.CharField()  # maybe use CHOICES or something multichoices or ManyToOne field
-    cooking_time = models.PositiveSmallIntegerField(verbose_name='Время готовки')
+    name = models.CharField(
+        max_length=256, db_index=True,
+        verbose_name='Название блюда',
+        help_text='Укажите название блюда'
+    )
+    image = models.ImageField(
+        upload_to='recipe/images/'
+    )
+    description = models.TextField(
+        blank=True, verbose_name='Описание рецепта'
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient, verbose_name='Ингредиент',
+        blank=True,
+        related_name='recipes',
+        through='RecipeIngredient',
+    )
+    cooking_time = models.PositiveSmallIntegerField(
+        verbose_name='Время готовки'
+    )
 
     def __str__(self):
         return self.name
 
 
-class Ingredient(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Ингредиент')
-    count = models.PositiveSmallIntegerField(verbose_name='Количество')
-    unit = models.CharField(
-        max_length=256,
-        verbose_name='Единица измерения',
-        help_text='Укажите единицу измерения'
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE
     )
+    ingredient = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE
+    )
+    amount = models.PositiveIntegerField(
+        verbose_name='Количество'
+    )
+
+    def __str__(self):
+        return self.ingredient
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Подписчик',
+    )
+    following = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following',
+    )
+
+    class Meta:
+        unique_together = [['user', 'following'], ]

@@ -1,17 +1,26 @@
-from django_filters import rest_framework as df_filters
+import django_filters
 
-from reviews.models import Title
+from recipe.models import Ingredient
 
 
-class TitleFilter(df_filters.FilterSet):
-    """Фильтр по полям произведений."""
-    category = df_filters.CharFilter(field_name='category__slug',
-                                     lookup_expr='icontains')
-    genre = df_filters.CharFilter(field_name='genre__slug',
-                                  lookup_expr='icontains')
-    name = df_filters.CharFilter(field_name='name', lookup_expr='icontains')
-    year = df_filters.NumberFilter
+class IngredientFilterContains(django_filters.FilterSet):
+    """Фильтр по ингредиентам"""
+    ingredient = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='icontains'
+    )
 
     class Meta:
-        model = Title
-        fields = ('category', 'genre', 'name', 'year')
+        model = Ingredient
+        fields = '__all__'
+
+
+class IngredientFilterStartsWith(django_filters.FilterSet):
+    ingredient = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='istartswith'
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = '__all__'

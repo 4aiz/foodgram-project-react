@@ -16,40 +16,35 @@ def username_validator(username):
 
 class User(AbstractUser):
     ADMIN = 'admin'
-    MODERATOR = 'moderator'
     USER = 'user'
     roles = (
         (ADMIN, 'admin'),
-        (MODERATOR, 'moderator'),
         (USER, 'user'),
     )
     first_name = models.CharField(
         verbose_name='Имя',
         max_length=150,
-        default=''
     )
     last_name = models.CharField(
         verbose_name='Фамилия',
         max_length=150,
-        default=''
     )
     username = models.CharField(
-        verbose_name='Никнейм',
+        verbose_name='Username',
         max_length=150,
         unique=True,
         validators=[username_validator]
     )
-    bio = models.TextField(
-        null=True,
-        verbose_name='Био',
-        blank=True
-    )
     email = models.EmailField(
-        verbose_name='Адрес электронной почты',
+        verbose_name='Email',
         max_length=254,
         unique=True,
         blank=False,
         null=False,
+    )
+    password = models.CharField(
+        verbose_name='Пароль',
+        max_length=150,
     )
     role = models.CharField(
         verbose_name='Роль',
@@ -58,18 +53,9 @@ class User(AbstractUser):
         choices=roles
     )
 
-    confirmation_code = models.CharField(max_length=10)
-
-    def check_confirmation_code(self, confirmation_code):
-        return self.confirmation_code == confirmation_code
-
     @property
     def is_admin(self):
         return self.role == 'admin'
-
-    @property
-    def is_moderator(self):
-        return self.role == 'moderator'
 
     def __str__(self):
         return self.username
