@@ -18,9 +18,6 @@ class UserViewSet(UserViewSet):
     serializer_class = CreateUserSerializer
     queryset = User.objects.all()
 
-    def create(self, request):
-        request
-
 
 @method_decorator(csrf_protect, name='dispatch')
 class ProfileActions(APIView):
