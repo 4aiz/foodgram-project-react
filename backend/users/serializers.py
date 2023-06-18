@@ -1,34 +1,20 @@
 from rest_framework import serializers
-from djoser.serializers import UserSerializer, UserCreateSerializer
 
+from recipe.models import Follow
 from .models import User
 
 
-class UserDetailSerializer(UserSerializer):
-    # first_name = serializers.CharField(max_length=150)
-    # last_name = serializers.CharField(max_length=150)
-
-    def is_subscribed(self):
-        pass
-
+class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
-        read_only_fields = ('id', )
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name']
+        extra_kwargs = {'password': {'write_only': True}}
 
-
-class CreateUserSerializer(UserCreateSerializer):
-
-    def perform_create(self, validated_data):
-        ...
-
-    class Meta:
-        model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
-
-
-class TokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username',
-                  'confirmation_code']
+    def create(self, validated_data):
+        return User.objects.create_user(
+            email=validated_data['email'],
+            username=validated_data['username'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name']
+        )

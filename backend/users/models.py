@@ -30,13 +30,13 @@ class User(AbstractUser):
         max_length=150,
     )
     username = models.CharField(
-        verbose_name='Username',
+        verbose_name='Имя пользователя',
         max_length=150,
         unique=True,
         validators=[username_validator]
     )
     email = models.EmailField(
-        verbose_name='Email',
+        verbose_name='Адрес электронной почты',
         max_length=254,
         unique=True,
         blank=False,
@@ -51,6 +51,9 @@ class User(AbstractUser):
         max_length=25,
         default=USER,
         choices=roles
+    )
+    is_subscriber = models.BooleanField(
+        default=False,
     )
 
     @property

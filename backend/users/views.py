@@ -1,75 +1,43 @@
-from djoser.views import UserViewSet
-
-from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_protect
-from rest_framework.views import APIView
+from django.contrib.auth.hashers import check_password
+from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework import generics, status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-
 from .models import User
-from api.permissions import AdminPermission
-from .serializers import (UserDetailSerializer,
-                          CreateUserSerializer, )
+# from api.permissions import AdminPermission
+# from api.pagination import Pagination
+from .serializers import UserDetailSerializer
 
 
-class UserViewSet(UserViewSet):
-    serializer_class = CreateUserSerializer
+class UserCreateViewSet(viewsets.ModelViewSet):
+    """Creating User"""
     queryset = User.objects.all()
+    serializer_class = UserDetailSerializer
 
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
-@method_decorator(csrf_protect, name='dispatch')
-class ProfileActions(APIView):
+    @action(detail=False, methods=['post'], url_path='set_password')
+    def set_password(self, request):
+        user = request.user
+        serializer = self.get_serializer(user, data=request.data)
+        if serializer.is_valid():
+            current_password = serializer.validated_data['current_password']
+            new_password = serializer.validated_data['new_password']
+
+            if not check_password(current_password, user.password):
+                return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(new_password)
+            user.save()
+            return Response({'detail': 'Password changed successfully.'})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
     def get_permissions(self):
-        if self.kwargs.get('username', '') == 'me':
+        if self.action in ['me', 'set_password']:
             self.permission_classes = [IsAuthenticated]
-        else:
-            self.permission_classes = [AdminPermission]
-
         return super().get_permissions()
-
-    def get(self, request, username):
-        try:
-            if username == 'me':
-                user = request.user
-            else:
-                user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            return Response('User not found', status=status.HTTP_404_NOT_FOUND)
-
-        serializer = UserDetailSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, username):
-        if username == 'me':
-            user = request.user
-            serializer = UserDetailSerializer(user,
-                                             data=request.data,
-                                             partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-        else:
-            user = User.objects.get(username=username)
-            serializer = UserDetailSerializer(user,
-                                            data=request.data,
-                                            partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, username):
-        if username == 'me':
-            return Response('Method not allowed',
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        user = get_object_or_404(User, username=username)
-
-        user.delete()
-        return Response('User deleted', status=status.HTTP_204_NO_CONTENT)

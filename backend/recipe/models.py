@@ -70,7 +70,7 @@ class RecipeIngredient(models.Model):
         Recipe, on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE
+        Ingredient, on_delete=models.DO_NOTHING
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество'
@@ -94,3 +94,22 @@ class Follow(models.Model):
 
     class Meta:
         unique_together = [['user', 'following'], ]
+
+
+# class ShoppingCart(models.Model):
+#     recipe = models.ForeignKey(
+#         Recipe, verbose_name='Рецепт',
+#         on_delete=models.CASCADE
+#     )
+
+
+class Favorite(models.Model):
+    recipe = models.ForeignKey(
+        Recipe, verbose_name='Рецепт',
+        on_delete=models.CASCADE,
+        related_name='favorites',
+    )
+    user = models.ForeignKey(
+        User, verbose_name='Подписчик',
+        on_delete=models.DO_NOTHING
+    )

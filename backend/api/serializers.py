@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from recipe.models import Tag, Ingredient, Recipe, Follow
+from recipe.models import Tag, Ingredient, Recipe, Follow, Favorite
 
 
 class Hex2NameColor(serializers.Field):
@@ -51,12 +51,19 @@ class IngredientSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     tag = TagSerializer(
-        read_only=True
+        required=True,
+        read_only=True,
+        many=True,
     )
     ingredients = IngredientSerializer(
+        required=True,
+        read_only=True,
         many=True,
-        read_only=True
     )
+    amount = serializers.SerializerMethodField
+
+    def get_amount(self):
+        pass
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
@@ -85,26 +92,31 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RecipeCreateSerializer(serializers.ModelSerializer):
-    image = Base64ImageField()
-    ingredients = serializers.SlugRelatedField(
-        slug_field='id',
-        queryset=Ingredient.objects.all()
-    )
-    tags = serializers.SlugRelatedField(
-        slug_field='id',
-        queryset=Tag.objects.all(),
-        many=True
-    )
-
+class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
-        model = Recipe
+        model = Favorite
+
+# class RecipeCreateSerializer(serializers.ModelSerializer):
+#     image = Base64ImageField()
+#     ingredients = serializers.SlugRelatedField(
+#         slug_field='id',
+#         queryset=Ingredient.objects.all()
+#     )
+#     tags = serializers.SlugRelatedField(
+#         slug_field='id',
+#         queryset=Tag.objects.all(),
+#         many=True
+#     )
+#
+#     class Meta:
+#         fields = '__all__'
+#         model = Recipe
 
 
-class FollowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Follow
+# class FollowSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Follow
 
 # class CommentSerializer(serializers.ModelSerializer):
 #     author = serializers.SlugRelatedField(
