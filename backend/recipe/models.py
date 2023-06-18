@@ -46,7 +46,7 @@ class Recipe(models.Model):
         help_text='Укажите название блюда'
     )
     image = models.ImageField(
-        upload_to='recipe/images/'
+        upload_to='images/'
     )
     description = models.TextField(
         blank=True, verbose_name='Описание рецепта'
@@ -96,20 +96,23 @@ class Follow(models.Model):
         unique_together = [['user', 'following'], ]
 
 
-# class ShoppingCart(models.Model):
-#     recipe = models.ForeignKey(
-#         Recipe, verbose_name='Рецепт',
-#         on_delete=models.CASCADE
-#     )
+class ShoppingCart(models.Model):
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.DO_NOTHING,
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING
+    )
 
 
 class Favorite(models.Model):
     recipe = models.ForeignKey(
-        Recipe, verbose_name='Рецепт',
+        Recipe,
         on_delete=models.CASCADE,
-        related_name='favorites',
     )
     user = models.ForeignKey(
-        User, verbose_name='Подписчик',
+        User,
         on_delete=models.DO_NOTHING
     )

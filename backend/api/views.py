@@ -1,4 +1,3 @@
-from django.db.models import Avg  # может использовать из этой библиотеки
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticated
@@ -10,8 +9,10 @@ from .pagination import Pagination
 from .serializers import (RecipeSerializer,
                           TagSerializer,
                           IngredientSerializer,
-                          FavoriteSerializer)
-from recipe.models import (Recipe, Ingredient, Tag, Favorite)
+                          FavoriteSerializer,
+                          ShoppingCartSerializer,
+                          FollowSerializer)
+from recipe.models import (Recipe, Ingredient, Tag, Favorite, Follow, ShoppingCart)
 from users.models import User
 
 
@@ -64,9 +65,18 @@ class FavoriteViewSet(mixins.CreateModelMixin,
     #     return user.favorites.all()
 
 
-# class FollowViewset(viewsets.ModelViewSet):
-#     serializer_class = FollowSerializer
-#     pagination_class = PageNumberPagination
+class ShoppingCartViewSet(mixins.CreateModelMixin,
+                          mixins.DestroyModelMixin,
+                          mixins.RetrieveModelMixin,
+                          viewsets.GenericViewSet):
+    queryset = ShoppingCart.objects.all()
+    serializer_class = ShoppingCartSerializer
+
+
+class FollowViewset(viewsets.ModelViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    pagination_class = PageNumberPagination
 #
 #     def get_queryset(self):
 #         recipe_id = self.kwargs.get('recipe_id')
@@ -84,16 +94,3 @@ class FavoriteViewSet(mixins.CreateModelMixin,
 #         serializer.save(author=self.request.user, review=review)
 
 
-class IngredientsViewset(viewsets.ModelViewSet):
-    serializer_class = IngredientSerializer
-    permission_classes = [IsAuthenticated, ]
-    pagination_class = PageNumberPagination
-
-    def get_queryset(self):
-        recipe_id = self.kwargs.get('recipe_id')
-        recipe = get_object_or_404(Recipe, id=recipe_id)
-        return recipe.ingredients.all()
-
-    # def perform_create(self, serializer):
-    #     title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-    #     serializer.save(author=self.request.user, title=title)

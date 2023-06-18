@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from recipe.models import Tag, Ingredient, Recipe, Follow, Favorite
+from recipe.models import Tag, Ingredient, Recipe, Follow, Favorite, ShoppingCart
 
 
 class Hex2NameColor(serializers.Field):
@@ -36,101 +36,72 @@ class TagSerializer(serializers.ModelSerializer):
     color = Hex2NameColor()
 
     class Meta:
-        fields = ('id', 'name', 'color', 'slug')
         model = Tag
+        fields = ('id', 'name', 'color', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    amount = serializers.IntegerField(required=True, min_value=1)
 
     class Meta:
-        fields = ('id', 'name', 'measurement_unit', 'amount')
         model = Ingredient
+        fields = ('id', 'name', 'measurement_unit')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     tag = TagSerializer(
         required=True,
-        read_only=True,
         many=True,
     )
     ingredients = IngredientSerializer(
-        required=True,
+        # required=True,
         read_only=True,
         many=True,
     )
-    amount = serializers.SerializerMethodField
 
-    def get_amount(self):
-        pass
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.ingredients = validated_data.get(
-            'ingredients', instance.ingredients
-        )
-        instance.image = validated_data.get('image', instance.image)
-        instance.description = validated_data.get('description', instance.description)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
-
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
-            lst = []
-            for tag in tags_data:
-                current_tag, status = Tag.objects.get_or_create(
-                    **tag
-                )
-                lst.append(current_tag)
-            instance.tags.set(lst)
-
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     instance.name = validated_data.get('name', instance.name)
+    #     instance.ingredients = validated_data.get(
+    #         'ingredients', instance.ingredients
+    #     )
+    #     instance.image = validated_data.get('image', instance.image)
+    #     instance.description = validated_data.get('description', instance.description)
+    #     instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+    #
+    #     if 'tags' in validated_data:
+    #         tags_data = validated_data.pop('tags')
+    #         lst = []
+    #         for tag in tags_data:
+    #             current_tag, status = Tag.objects.get_or_create(
+    #                 **tag
+    #             )
+    #             lst.append(current_tag)
+    #         instance.tags.set(lst)
+    #
+    #     instance.save()
+    #     return instance
 
     class Meta:
         model = IngredientSerializer
-        fields = '__all__'
+        fields = ('id', 'author', 'tags', 'name', 'image', 'description', 'ingredients', 'cooking_time')
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = '__all__'
         model = Favorite
-
-# class RecipeCreateSerializer(serializers.ModelSerializer):
-#     image = Base64ImageField()
-#     ingredients = serializers.SlugRelatedField(
-#         slug_field='id',
-#         queryset=Ingredient.objects.all()
-#     )
-#     tags = serializers.SlugRelatedField(
-#         slug_field='id',
-#         queryset=Tag.objects.all(),
-#         many=True
-#     )
-#
-#     class Meta:
-#         fields = '__all__'
-#         model = Recipe
+        fields = '__all__'
 
 
-# class FollowSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Follow
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingCart
+        fields = '__all__'
 
-# class CommentSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         read_only=True,
-#         slug_field='username'
-#     )
-#     review = serializers.SlugRelatedField(
-#         read_only=True,
-#         slug_field='text'
-#     )
-#
-#     class Meta:
-#         model = Comment
-#         fields = '__all__'
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = '__all__'
 
 
 # class ReviewSerializer(serializers.ModelSerializer):

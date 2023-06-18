@@ -19,25 +19,25 @@ class UserCreateViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'], url_path='set_password')
-    def set_password(self, request):
-        user = request.user
-        serializer = self.get_serializer(user, data=request.data)
-        if serializer.is_valid():
-            current_password = serializer.validated_data['current_password']
-            new_password = serializer.validated_data['new_password']
-
-            if not check_password(current_password, user.password):
-                return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user.set_password(new_password)
-            user.save()
-            return Response({'detail': 'Password changed successfully.'})
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-    def get_permissions(self):
-        if self.action in ['me', 'set_password']:
-            self.permission_classes = [IsAuthenticated]
-        return super().get_permissions()
+    # @action(detail=False, methods=['post'], url_path='set_password')
+    # def set_password(self, request):
+    #     user = request.user
+    #     serializer = self.get_serializer(user, data=request.data)
+    #     if serializer.is_valid():
+    #         current_password = serializer.validated_data['current_password']
+    #         new_password = serializer.validated_data['new_password']
+    #
+    #         if not check_password(current_password, user.password):
+    #             return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #         user.set_password(new_password)
+    #         user.save()
+    #         return Response({'detail': 'Password changed successfully.'})
+    #     if not serializer.is_valid():
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+    #
+    # def get_permissions(self):
+    #     if self.action in ['me', 'set_password']:
+    #         self.permission_classes = [IsAuthenticated]
+    #     return super().get_permissions()
