@@ -9,8 +9,8 @@ Foodgram - программа-ассистент, который поможет 
 # Об Авторе:
 
 Автором идеи данного проекта выступает вся команда Yandex. 
-Fronted - Команда Яндекса
-Backend, CI/CD, Docker - Кириллов Всеволод (https://github.com/4aiz) 
+* Fronted - Команда Яндекса
+* Backend, CI/CD, Docker - Кириллов Всеволод (https://github.com/4aiz) 
 
 # Как запустить проект:
 
