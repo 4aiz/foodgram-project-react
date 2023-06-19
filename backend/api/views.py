@@ -19,7 +19,7 @@ from users.models import User
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    pagination_class = Pagination
+    pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     ordering_fields = ('name',)
     ordering = ('name',)

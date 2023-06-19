@@ -52,7 +52,7 @@ class User(AbstractUser):
         default=USER,
         choices=roles
     )
-    is_subscriber = models.BooleanField(
+    is_subscribed = models.BooleanField(
         default=False,
     )
 

@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from recipe.models import Tag, Ingredient, Recipe, Follow, Favorite, ShoppingCart
+from recipe.models import Tag, Ingredient, Recipe, Follow, Favorite, ShoppingCart, RecipeIngredient
 
 
 class Hex2NameColor(serializers.Field):
@@ -33,6 +33,14 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    amount = serializers.IntegerField(min_value=1)
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('amount', )
+
+
 class TagSerializer(serializers.ModelSerializer):
     color = Hex2NameColor()
 
@@ -42,6 +50,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    amount = RecipeIngredientSerializer
 
     class Meta:
         model = Ingredient
@@ -50,41 +59,25 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    tag = TagSerializer(
+    tags = TagSerializer(
         required=True,
         many=True,
     )
     ingredients = IngredientSerializer(
         # required=True,
-        read_only=True,
         many=True,
     )
-
-    # def update(self, instance, validated_data):
-    #     instance.name = validated_data.get('name', instance.name)
-    #     instance.ingredients = validated_data.get(
-    #         'ingredients', instance.ingredients
-    #     )
-    #     instance.image = validated_data.get('image', instance.image)
-    #     instance.description = validated_data.get('description', instance.description)
-    #     instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
-    #
-    #     if 'tags' in validated_data:
-    #         tags_data = validated_data.pop('tags')
-    #         lst = []
-    #         for tag in tags_data:
-    #             current_tag, status = Tag.objects.get_or_create(
-    #                 **tag
-    #             )
-    #             lst.append(current_tag)
-    #         instance.tags.set(lst)
-    #
-    #     instance.save()
-    #     return instance
+    amount = RecipeIngredientSerializer
+    text = serializers.CharField(source='description')
+    is_favorited = serializers.BooleanField(default=False)
+    is_in_shopping_cart = serializers.BooleanField(default=False)
 
     class Meta:
-        model = IngredientSerializer
-        fields = ('id', 'author', 'tags', 'name', 'image', 'description', 'ingredients', 'cooking_time')
+        model = Recipe
+        fields = (
+            'id', 'tags', 'author', 'ingredients', 'is_favorited',
+            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
+        )
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -103,30 +96,3 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = '__all__'
-
-
-# class ReviewSerializer(serializers.ModelSerializer):
-#     author = serializers.SlugRelatedField(
-#         read_only=True,
-#         slug_field='username',
-#         default=serializers.CurrentUserDefault()
-#     )
-#     title = serializers.SlugRelatedField(
-#         read_only=True,
-#         slug_field='name'
-#     )
-#
-#     def validate(self, data):
-#         request = self.context['request']
-#         author = request.user
-#         title_id = self.context['view'].kwargs.get('title_id')
-#         title = get_object_or_404(Title, pk=title_id)
-#         if request.method == 'POST':
-#             if Review.objects.filter(title=title, author=author).exists():
-#                 raise ValidationError('Вы не можете добавить'
-#                                       ' ещё один отзыв на произведение')
-#         return data
-#
-#     class Meta:
-#         model = Review
-#         fields = '__all__'
