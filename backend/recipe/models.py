@@ -1,15 +1,26 @@
 from django.db import models
+from django.utils.text import slugify
 
 from users.models import User
+
+
+# COLORS = {
+#     'Завтрак': '#E26C2D',
+#     'Обед': '#49B64E',
+#     'Ужин': '#8775D2'
+# }
 
 
 class Tag(models.Model):
     name = models.CharField(max_length=256, db_index=True,
                             verbose_name='Имя тега',
-                            help_text='Укажите имя тега',
                             unique=True)
     color = models.CharField(max_length=16)
     slug = models.SlugField('Индификатор', unique=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -93,7 +104,12 @@ class Follow(models.Model):
     )
 
     class Meta:
-        unique_together = [['user', 'following'], ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_user_following'
+            )
+        ]
 
 
 class ShoppingCart(models.Model):

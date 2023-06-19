@@ -15,7 +15,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
@@ -164,8 +163,6 @@ DJOSER = {
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-
-DATA_FOLDER = Path(__file__).resolve().parent.parent.parent / 'data'
 
 # CORS_ALLOWED_ORIGINS = [
 #     'http://localhost:80',

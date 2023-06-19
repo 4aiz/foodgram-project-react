@@ -14,11 +14,12 @@ class Hex2NameColor(serializers.Field):
         return value
 
     def to_internal_value(self, data):
-        try:
-            data = webcolors.hex_to_name(data)
-        except ValueError:
-            raise serializers.ValidationError('Для этого цвета нет имени')
-        return data
+        for tag in data:
+            try:
+                color = webcolors.hex_to_name(data.get(tag))
+            except ValueError:
+                raise serializers.ValidationError('Для этого цвета нет имени')
+            return color
 
 
 class Base64ImageField(serializers.ImageField):
