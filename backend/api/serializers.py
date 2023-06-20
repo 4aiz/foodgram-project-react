@@ -36,6 +36,9 @@ class Base64ImageField(serializers.ImageField):
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     amount = serializers.IntegerField(min_value=1)
 
+    def create(self, validated_data):
+        user = validated_data['user']
+
     class Meta:
         model = RecipeIngredient
         fields = ('amount', )
@@ -60,11 +63,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     tags = TagSerializer(
-        required=True,
         many=True,
     )
     ingredients = IngredientSerializer(
-        # required=True,
         many=True,
     )
     amount = RecipeIngredientSerializer

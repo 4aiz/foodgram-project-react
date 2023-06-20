@@ -48,7 +48,7 @@ class IngredientViewSet(mixins.ListModelMixin,
     serializer_class = IngredientSerializer
     pagination_class = Pagination
     filter_backends = (filters.SearchFilter,)
-    filterset_class = (IngredientFilterContains, IngredientFilterStartsWith)
+    filterset_class = (IngredientFilterContains, )
     search_fields = ('name',)
     lookup_field = 'slug'
 
@@ -92,5 +92,3 @@ class FollowViewset(viewsets.ModelViewSet):
 #             title=title_id
 #         )
 #         serializer.save(author=self.request.user, review=review)
-
-

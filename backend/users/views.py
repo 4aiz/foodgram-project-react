@@ -3,10 +3,10 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ViewSet
+
 from .models import User
-# from api.permissions import AdminPermission
-# from api.pagination import Pagination
-from .serializers import UserCreateSerializer, UserUpdateSerializer
+from .serializers import UserCreateSerializer, SetPasswordSerializer
 
 
 class UserCreateViewSet(viewsets.ModelViewSet):
@@ -14,37 +14,36 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserCreateSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['GET'])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
 
-class UserUpdateViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserUpdateSerializer
+class SetPasswordViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['post'])
-    def set_password(self, request):
-        user = request.user
-        serializer = self.get_serializer(user, data=request.data)
-
+    def create(self, request):
+        serializer = SetPasswordSerializer(data=request.data)
         if serializer.is_valid():
-            current_password = serializer.validated_data['current_password']
             new_password = serializer.validated_data['new_password']
+            current_password = serializer.validated_data['current_password']
 
-            if not check_password(current_password, user.password):
-                return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            user.set_password(new_password)
-            user.save()
-            return Response({'detail': 'Password changed successfully.'})
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-    # def get_permissions(self):
-    #     if self.action in ['set_password']:
-    #         self.permission_classes = [IsAuthenticated]
-    #     return super().get_permissions()
+            user = request.user
+            if user.check_password(current_password):
+                user.set_password(new_password)
+                user.save()
+                return Response(
+                    {'message': 'Password has been changed successfully.'},
+                    status=status.HTTP_204_NO_CONTENT
+                )
+            else:
+                return Response(
+                    {'message': 'Current password is incorrect.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )

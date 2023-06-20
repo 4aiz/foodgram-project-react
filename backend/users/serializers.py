@@ -24,10 +24,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserUpdateSerializer(serializers.ModelSerializer):
-    new_password = serializers.CharField(max_length=150, default=None)
-    current_password = serializers.CharField(max_length=150, default=None)
-
-    class Meta:
-        model = User
-        fields = ['new_password', 'current_password']
+class SetPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True)
+    current_password = serializers.CharField(required=True)

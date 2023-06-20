@@ -11,7 +11,7 @@ from .views import (RecipeViewSet,
                     FollowViewset,
                     ShoppingCartViewSet
                     )
-from users.views import UserCreateViewSet, UserUpdateViewSet
+from users.views import UserCreateViewSet, SetPasswordViewSet
 
 router = DefaultRouter()
 
@@ -23,7 +23,7 @@ router.register(
 )
 router.register(r'^users/(?P<user_id>\d+)/subscribe', FollowViewset, basename='followers')
 router.register(r'users/subscriptions', FollowViewset, basename='subscriptions')
-router.register(r'users/set_password', UserUpdateViewSet, basename='change_password')
+router.register(r'users/set_password', SetPasswordViewSet, basename='change_password')
 router.register(r'users', UserCreateViewSet, basename='users')
 router.register(r'^recipes/(?P<recipe_id>\d+)/shopping_cart', ShoppingCartViewSet, basename='shopping_cart')
 
