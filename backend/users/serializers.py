@@ -24,6 +24,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = ('user', 'following')
+
+
 class SetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
     current_password = serializers.CharField(required=True)

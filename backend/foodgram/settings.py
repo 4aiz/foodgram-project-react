@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
+
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,8 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'rest_framework.authtoken',
-    # 'corsheaders',  # Убрать на этапе продакшна
+    'corsheaders',  # Убрать на этапе продакшна
     'djoser',
     'recipe',
     'users',
@@ -48,7 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',  # Убрать на этапе продакшна
+    'corsheaders.middleware.CorsMiddleware',  # Убрать на этапе продакшна
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -80,21 +83,14 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB', 'name'),
-#         'USER': os.getenv('POSTGRES_USER', 'user'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'password'),
-#         'HOST': os.getenv('DB_HOST', 'db'),
-#         'PORT': os.getenv('DB_PORT', 5432)
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('POSTGRES_DB', BASE_DIR / 'db.sqlite3'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT')
     }
 }
 
@@ -154,7 +150,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 100,
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 DJOSER = {
@@ -164,8 +163,8 @@ DJOSER = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:80',
-# ]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+]
 
-# CORS_URLS_REGEX = r'^/api/.*$'
+CORS_URLS_REGEX = r'^/api/.*$'
