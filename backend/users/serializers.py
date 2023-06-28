@@ -1,8 +1,8 @@
-from rest_framework import serializers
 from django.contrib.auth.hashers import check_password
-from rest_framework import status
+from rest_framework import serializers, status
 
 from recipe.models import Follow
+
 from .models import User
 
 
@@ -25,6 +25,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        subscription = Follow.objects.create(
+            user=self.context['request'].user,
+            following=validated_data['following']
+        )
+        subscription.save()
+        return subscription
+
     class Meta:
         model = Follow
         fields = ('user', 'following')

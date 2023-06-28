@@ -1,46 +1,37 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from reportlab.pdfgen import canvas
+from rest_framework import mixins, renderers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
-from rest_framework import viewsets, mixins, status, renderers
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from recipe.models import (Favorite, Follow, Ingredient, Recipe, ShoppingCart,
+                           Tag)
+from users.models import User
 
 from .filters import IngredientFilterContains
 from .pagination import Pagination
-from .serializers import (RecipeDetailSerializer,
-                          RecipeCreateSerializer,
-                          TagSerializer,
-                          IngredientSerializer,
-                          FavoriteSerializer,
-                          ShoppingCartSerializer,
-                          FollowSerializer)
-from recipe.models import (Recipe, Ingredient, Tag, Favorite, Follow, ShoppingCart)
-from users.models import User
-
-
-class PassthroughRenderer(renderers.BaseRenderer):
-    """
-        Return data as-is. View should supply a Response.
-    """
-    media_type = ''
-    format = ''
-
-    def render(self, data, accepted_media_type=None, renderer_context=None):
-        return data
+from .serializers import (RecipeCreateSerializer,
+                          RecipeIngredientReadSerializer,
+                          RecipeReadlSerializer, RecipeShortSerializer,
+                          TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeDetailSerializer
     pagination_class = PageNumberPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name',)
     ordering = ('pub_date',)
 
     def get_serializer_class(self):
-        if self.action == 'retrieve' or self.action == 'list' or self.action == 'put':
-            return RecipeDetailSerializer
+        if self.action == 'retrieve' or self.action == 'list':
+            return RecipeReadlSerializer
+        elif self.action == 'shopping_cart' or self.action == 'favorite':
+            return RecipeShortSerializer
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
@@ -51,14 +42,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #         self.permission_classes = [AllowAny,]
     #     else:
     #         self.permission_classes = [IsAuthenticated,]
-    #     return [permission() for permission in permission_classes]
+    #     return [permission() for permission in self.permission_classes]
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated],
-            renderer_classes=(PassthroughRenderer,)
             )
     def download_shopping_cart(self, request):
-        pass
+        user = request.user
+        shopping_cart = ShoppingCart.objects.filter(user=user)
+        if not shopping_cart:
+            return Response({'detail': 'Shopping cart is empty.'}, status=status.HTTP_404_NOT_FOUND)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.pdf"'
+
+        p = canvas.Canvas(response)
+        p.setFont("Helvetica", 12)
+
+        p.drawString(100, 750, "Shopping Cart:")
+        p.drawString(100, 700, "User: {}".format(user.username))
+        p.drawString(100, 650, "Recipes:")
+
+        y = 600
+        for item in shopping_cart:
+            recipe = item.recipe
+            p.drawString(120, y, recipe.name)
+            y -= 20
+
+        p.showPage()
+        p.save()
+
+        return response
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk):
@@ -112,30 +125,7 @@ class TagsViewSet(mixins.RetrieveModelMixin,
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     pagination_class = PageNumberPagination
-    serializer_class = IngredientSerializer
+    serializer_class = RecipeIngredientReadSerializer
     pagination_class = Pagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilterContains
-
-
-class FavoriteViewSet(mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer
-
-
-class ShoppingCartViewSet(mixins.CreateModelMixin,
-                          mixins.DestroyModelMixin,
-                          mixins.RetrieveModelMixin,
-                          viewsets.GenericViewSet):
-    queryset = ShoppingCart.objects.all()
-    serializer_class = ShoppingCartSerializer
-
-
-class FollowViewset(mixins.CreateModelMixin,
-                    mixins.DestroyModelMixin,
-                    mixins.RetrieveModelMixin,
-                    viewsets.GenericViewSet):
-    queryset = Follow.objects.all()
-    serializer_class = FollowSerializer

@@ -1,14 +1,16 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from recipe.models import Follow
+
 from .models import User
-from .serializers import (UserCreateSerializer, SetPasswordSerializer, FollowSerializer)
+from .serializers import (FollowSerializer, SetPasswordSerializer,
+                          UserCreateSerializer)
 
 
 class UserCreateViewSet(viewsets.ModelViewSet):
@@ -16,28 +18,36 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserCreateSerializer
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(
-        methods=["post", "delete"],
-        detail=True,
-        permission_classes=[IsAuthenticated],
-    )
+    @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
     def subscribe(self, request, *args, **kwargs):
-        author = get_object_or_404(User, id=request.data['id'])
+        following = get_object_or_404(User, id=request.data['id'])
         serializer = FollowSerializer(
-            author, data=request.data, context={"request": request}
+            following, data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
         if request.method == "POST":
-            Follow.objects.create(user=request.user, author=author)
+            Follow.objects.create(user=request.user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            Follow.objects.filter(author=author, user=request.user).delete()
+            Follow.objects.filter(author=following, user=request.user).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def subscriptions(self, request):
+        user = request.user
+        self.queryset = Follow.objects.filter(user=user)
+
+    # def get_permissions(self):
+    #     if self.action == 'list':
+    #         self.permission_classes = [AllowAny, ]
+    #     else:
+    #         self.permission_classes = [IsAuthenticated, ]
+    #     return [permission() for permission in self.permission_classes]
 
 
 class SetPasswordViewSet(ViewSet):

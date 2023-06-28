@@ -1,13 +1,9 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from users.views import SetPasswordViewSet, UserCreateViewSet
 
-from .views import (RecipeViewSet,
-                    IngredientViewSet,
-                    TagsViewSet,
-                    FollowViewset,
-                    )
-from users.views import UserCreateViewSet, SetPasswordViewSet
+from .views import IngredientViewSet, RecipeViewSet, TagsViewSet
 
 router = DefaultRouter()
 
@@ -15,11 +11,11 @@ router.register(r'recipes', RecipeViewSet, basename='recipes')
 router.register(r'tags', TagsViewSet, basename='tags')
 router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(
-    r'^recipes/(?P<recipe_id>\d+)/favorite', RecipeViewSet, basename='favorites'
+    r'^recipes/(?P<recipe_id>\d+)/favorite', RecipeViewSet, basename='favorite'
 )
-router.register(r'^users/(?P<user_id>\d+)/subscribe', FollowViewset, basename='followers')
-router.register(r'users/subscriptions', FollowViewset, basename='subscriptions')
-router.register(r'users/set_password', SetPasswordViewSet, basename='change_password')
+router.register(r'^users/(?P<user_id>\d+)/subscribe', UserCreateViewSet, basename='subscribe')
+router.register(r'users/subscriptions', UserCreateViewSet, basename='subscriptions')
+router.register(r'users/set_password', SetPasswordViewSet, basename='set_password')
 router.register(r'users', UserCreateViewSet, basename='users')
 router.register(r'^recipes/(?P<recipe_id>\d+)/shopping_cart', RecipeViewSet, basename='shopping_cart')
 
