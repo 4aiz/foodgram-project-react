@@ -25,14 +25,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    user = serializers.CurrentUserDefault()
 
-    def create(self, validated_data):
-        subscription = Follow.objects.create(
-            user=self.context['request'].user,
-            following=validated_data['following']
-        )
-        subscription.save()
-        return subscription
+    # def create(self, validated_data):
+    #     subscription = Follow.objects.create(
+    #         user=self.context['request'].user,
+    #         following=validated_data['following']
+    #     )
+    #     subscription.save()
+    #     return subscription
 
     class Meta:
         model = Follow

@@ -1,22 +1,19 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from reportlab.pdfgen import canvas
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from recipe.models import (Favorite, Ingredient, Recipe, ShoppingCart,
-                           Tag)
+from recipe.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 
 from .filters import IngredientFilterContains
 from .pagination import Pagination
-from .serializers import (RecipeCreateSerializer,
-                          RecipeIngredientReadSerializer,
+from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeReadlSerializer, RecipeShortSerializer,
-                          TagSerializer, IngredientSerializer)
+                          TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -53,24 +50,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'detail': 'Shopping cart is empty.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="cart.pdf"'
 
-        p = canvas.Canvas(response)
-        p.setFont("Helvetica", 12)
+        recipes = []
+        for recipe in shopping_cart.recipe:
+            recipes.append(recipe)
 
-        p.drawString(100, 750, "Shopping Cart:")
-        p.drawString(100, 700, "User: {}".format(user.username))
-        p.drawString(100, 650, "Recipes:")
+        txt = ''.join([f'{recipe.name}'])
 
-        y = 600
-        for item in shopping_cart:
-            recipe = item.recipe
-            p.drawString(120, y, recipe.name)
-            y -= 20
-
-        p.showPage()
-        p.save()
+        response = HttpResponse(content_type='txt/plain')
+        response['Content-Disposition'] = 'attachment;' \
+                                          ' filename="shopping_cart.pdf"'
 
         return response
 

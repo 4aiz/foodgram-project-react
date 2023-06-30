@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 INITIAL_TAGS = [
     {
         'color': '#61bdc2',

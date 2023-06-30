@@ -15,7 +15,12 @@ from .serializers import (FollowSerializer, SetPasswordSerializer,
 class UserCreateViewSet(viewsets.ModelViewSet):
     """Creating User"""
     queryset = User.objects.all()
-    serializer_class = UserCreateSerializer
+
+    def get_serializer_class(self):
+        if self.action in ('subscribe', 'subscriptions'):
+            return FollowSerializer
+        else:
+            return UserCreateSerializer
 
     @action(
         detail=False,
