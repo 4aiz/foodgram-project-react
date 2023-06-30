@@ -3,7 +3,7 @@ name: Main Foodgram workflow
 on:
   push:
     branches:
-      - main1234  # потом убери 1234
+      - master1234  # потом убери 1234
 
 jobs:
   tests:
@@ -121,7 +121,7 @@ jobs:
       - name: Push to DockerHub
         uses: docker/build-push-action@v4
         with:
-          context: ./nginx/
+          context: ./infra/
           push: true
           tags: 4aiz/foodgram_gateway:latest
 
