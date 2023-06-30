@@ -1,5 +1,4 @@
-from django.contrib.auth.hashers import check_password
-from rest_framework import serializers, status
+from rest_framework import serializers
 
 from recipe.models import Follow
 
@@ -9,7 +8,8 @@ from .models import User
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'is_subscribed']
+        fields = ['id', 'username', 'email', 'password',
+                  'first_name', 'last_name', 'is_subscribed']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

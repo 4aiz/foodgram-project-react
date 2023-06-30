@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -11,7 +10,9 @@ from recipe.models import Ingredient
 class Command(BaseCommand):
     def import_ingredients_from_file(self):
         data_folder = Path(__file__).resolve().parent.parent.parent.parent / 'data'
-        file_path = os.path.join(data_folder, 'ingredients.json')
+        file_path = os.path.join(
+            data_folder, 'ingredients.json'
+        )
         with open(file_path, encoding='utf-8') as ingredients:
             data = json.load(ingredients)
             for data_object in data:
