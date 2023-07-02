@@ -6,10 +6,11 @@ from .models import User
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password',
-                  'first_name', 'last_name', 'is_subscribed']
+        fields = ('id', 'username', 'email', 'password',
+                  'first_name', 'last_name', 'is_subscribed')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -24,20 +25,24 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
-class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.CurrentUserDefault()
+class UserFollowSerializer(serializers.ModelSerializer):
+    recipes = serializers.SerializerMethodField()
 
-    # def create(self, validated_data):
-    #     subscription = Follow.objects.create(
-    #         user=self.context['request'].user,
-    #         following=validated_data['following']
-    #     )
-    #     subscription.save()
-    #     return subscription
+    def get_recipes(self):
+        pass
+
+    def create(self, validated_data):
+        following = User.objects.get(id=validated_data['id'])
+        user = self.context['request'].user
+        subscription = Follow.objects.create(user=user, following=following)
+        return subscription
 
     class Meta:
-        model = Follow
-        fields = ('user', 'following')
+        model = User
+        fields = (
+            'id', 'username', 'email',
+            'first_name', 'last_name', 'is_subscribed', 'recipes'
+        )
 
 
 class SetPasswordSerializer(serializers.Serializer):

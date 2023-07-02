@@ -4,7 +4,7 @@ from recipe.data_import import INITIAL_INGREDIENTS
 
 
 def add_ingredients(apps, schema_editor):
-    Ingredient = apps.get.model('recipe', 'Ingredient')
+    Ingredient = apps.get_model('recipe', 'Ingredient')
     for ingredient in INITIAL_INGREDIENTS:
         new_ingredient = Ingredient(
             name=ingredient['name'],
@@ -14,7 +14,7 @@ def add_ingredients(apps, schema_editor):
 
 
 def remove_ingredients(apps, schema_editor):
-    Ingredient = apps.get.model('recipe', 'Ingredient')
+    Ingredient = apps.get_model('recipe', 'Ingredient')
     for ingredient in INITIAL_INGREDIENTS:
         Ingredient.objects.get(
             name=ingredient['name'],

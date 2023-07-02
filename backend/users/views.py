@@ -8,17 +8,18 @@ from rest_framework.viewsets import ViewSet
 from recipe.models import Follow
 
 from .models import User
-from .serializers import (FollowSerializer, SetPasswordSerializer,
+from .serializers import (UserFollowSerializer, SetPasswordSerializer,
                           UserCreateSerializer)
 
 
 class UserCreateViewSet(viewsets.ModelViewSet):
     """Creating User"""
     queryset = User.objects.all()
+    permission_classes = AllowAny
 
     def get_serializer_class(self):
         if self.action in ('subscribe', 'subscriptions'):
-            return FollowSerializer
+            return UserFollowSerializer
         else:
             return UserCreateSerializer
 
@@ -38,16 +39,16 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     )
     def subscribe(self, request, *args, **kwargs):
         following = get_object_or_404(User, id=request.data['id'])
-        serializer = FollowSerializer(
+        serializer = UserFollowSerializer(
             following, data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        if request.method == "POST":
+        if request.method == "post":
             Follow.objects.create(user=request.user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             Follow.objects.filter(
-                author=following,
+                following=following,
                 user=request.user
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -59,13 +60,6 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     def subscriptions(self, request):
         user = request.user
         self.queryset = Follow.objects.filter(user=user)
-
-    # def get_permissions(self):
-    #     if self.action == 'list':
-    #         self.permission_classes = [AllowAny, ]
-    #     else:
-    #         self.permission_classes = [IsAuthenticated, ]
-    #     return [permission() for permission in self.permission_classes]
 
 
 class SetPasswordViewSet(ViewSet):
@@ -83,12 +77,12 @@ class SetPasswordViewSet(ViewSet):
                 user.set_password(new_password)
                 user.save()
                 return Response(
-                    {'message': 'Password has been changed successfully.'},
+                    {'detail': 'Пароль успешно сменен'},
                     status=status.HTTP_204_NO_CONTENT
                 )
             else:
                 return Response(
-                    {'message': 'Current password is incorrect.'},
+                    {'detail': 'Неверный пароль'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         else:

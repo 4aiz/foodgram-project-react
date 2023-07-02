@@ -20,14 +20,14 @@ INITIAL_TAGS = [
 
 
 def add_tags(apps, schema_editor):
-    Tag = apps.get.model('recipe', 'Tag')
+    Tag = apps.get_model('recipe', 'Tag')
     for tag in INITIAL_TAGS:
         new_tag = Tag(color=tag['color'], name=tag['name'], slug=tag['slug'])
         new_tag.save()
 
 
 def remove_tags(apps, schema_editor):
-    Tag = apps.get.model('recipe', 'Tag')
+    Tag = apps.get_model('recipe', 'Tag')
     for tag in INITIAL_TAGS:
         Tag.objects.get(slug=tag['slug']).delete()
 

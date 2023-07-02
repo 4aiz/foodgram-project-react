@@ -106,6 +106,7 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.DO_NOTHING,
+        related_name='carts'
     )
     user = models.ForeignKey(
         User,
