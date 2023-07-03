@@ -22,8 +22,8 @@ from .serializers import (IngredientSerializer, RecipeCreateSerializer,
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = PageNumberPagination
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipeFilter
+    # filter_backends = (DjangoFilterBackend,)
+    # filterset_class = RecipeFilter
     permission_classes = [AllowAny]
 
     def get_queryset(self):
@@ -104,7 +104,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
 
-        if not user.is_authorized():
+        if not user.is_authenticated:
             return Response(
                 {'errors': 'Пользователь не авторизован'},
                 status=status.HTTP_401_UNAUTHORIZED
@@ -146,7 +146,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
 
-        if not user.is_authorized():
+        if not user.is_authenticated:
             return Response(
                 {'errors': 'Пользователь не авторизован'},
                 status=status.HTTP_401_UNAUTHORIZED

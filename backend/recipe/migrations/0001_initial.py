@@ -30,8 +30,6 @@ class Migration(migrations.Migration):
                 ('image', models.ImageField(upload_to='images/')),
                 ('description', models.TextField(blank=True, verbose_name='Описание рецепта')),
                 ('cooking_time', models.PositiveSmallIntegerField(verbose_name='Время готовки')),
-                ('is_favorited', models.BooleanField(default=False)),
-                ('is_in_shopping_cart', models.BooleanField(default=False)),
                 ('pub_date', models.DateTimeField(auto_now_add=True)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recipes', to=settings.AUTH_USER_MODEL, verbose_name='Автор')),
             ],

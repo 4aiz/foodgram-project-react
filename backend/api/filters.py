@@ -36,12 +36,6 @@ class RecipeFilter(django_filters.FilterSet):
     def filter_is_favorited(self, queryset, name, value):
         return queryset.filter(is_favorited__isnull=False)
 
-    # def filter_tags(self):
-    #     pass
-    #
-    # def filter_author(self):
-    #     pass
-
     class Meta:
         model = Recipe
         fields = ('author', 'tags', 'is_in_shopping_cart', 'is_favorited')

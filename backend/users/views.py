@@ -15,13 +15,20 @@ from .serializers import (SetPasswordSerializer, UserCreateSerializer,
 class UserCreateViewSet(viewsets.ModelViewSet):
     """Creating User"""
     queryset = User.objects.all()
-    permission_classes = AllowAny
 
     def get_serializer_class(self):
         if self.action in ('subscribe', 'subscriptions'):
             return UserFollowSerializer
         else:
             return UserCreateSerializer
+
+    def get_permissions(self):
+        if self.action in ('subscribe', 'subscriptions'):
+            return [IsAuthenticated()]
+        elif self.action in ('create', 'list'):
+            return [AllowAny()]
+        else:
+            return super().get_permissions()
 
     @action(
         detail=False,
@@ -37,15 +44,15 @@ class UserCreateViewSet(viewsets.ModelViewSet):
         methods=["post", "delete"],
         permission_classes=[IsAuthenticated]
     )
-    def subscribe(self, request, *args, **kwargs):
-        following = get_object_or_404(User, id=request.data['id'])
-        serializer = UserFollowSerializer(
-            following, data=request.data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
+    def subscribe(self, request, pk):
+        following = get_object_or_404(User, id=pk)
+        # serializer = UserFollowSerializer(
+        #     following, data=request.data, context={"request": request}
+        # )
+        # serializer.is_valid(raise_exception=True)
         if request.method == "post":
             Follow.objects.create(user=request.user, following=following)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'detail': 'Created'}, status=status.HTTP_201_CREATED)
         else:
             Follow.objects.filter(
                 following=following,
@@ -64,15 +71,20 @@ class UserCreateViewSet(viewsets.ModelViewSet):
 
 class SetPasswordViewSet(ViewSet):
     """User change password"""
-    permission_classes = [IsAuthenticated]
 
     def create(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return Response(
+                {'errors': 'Пользователь не авторизован'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         serializer = SetPasswordSerializer(data=request.data)
+
         if serializer.is_valid():
             new_password = serializer.validated_data['new_password']
             current_password = serializer.validated_data['current_password']
 
-            user = request.user
             if user.check_password(current_password):
                 user.set_password(new_password)
                 user.save()

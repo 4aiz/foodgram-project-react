@@ -77,8 +77,6 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время готовки'
     )
-    is_favorited = models.BooleanField(default=False)
-    is_in_shopping_cart = models.BooleanField(default=False)
     pub_date = models.DateTimeField(auto_now_add=True)
     objects = RecipeQuerySet.as_manager()
 

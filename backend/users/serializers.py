@@ -26,23 +26,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserFollowSerializer(serializers.ModelSerializer):
-    recipes = serializers.SerializerMethodField()
-
-    def get_recipes(self):
-        pass
-
-    def create(self, validated_data):
-        following = User.objects.get(id=validated_data['id'])
-        user = self.context['request'].user
-        subscription = Follow.objects.create(user=user, following=following)
-        return subscription
+    # recipes = serializers.SerializerMethodField()
+    #
+    # def get_recipes(self):
+    #     return ['Тут должны быть рецепты']
 
     class Meta:
-        model = User
-        fields = (
-            'id', 'username', 'email',
-            'first_name', 'last_name', 'is_subscribed', 'recipes'
-        )
+        model = Follow
+        # fields = (
+        #     'id', 'username', 'email',
+        #     'first_name', 'last_name', 'is_subscribed', 'recipes'
+        # )
+        fields = ('id', 'user', 'following')
 
 
 class SetPasswordSerializer(serializers.Serializer):
