@@ -1,6 +1,25 @@
 from django.db import models
+from django.db.models import Exists, OuterRef
 
 from users.models import User
+
+
+class RecipeQuerySet(models.QuerySet):
+    def filter_tags(self, tags):
+        if tags:
+            return self.filter(tags__slug__in=tags).distinct()
+        return self
+
+    def add_user_annotation(self, user_id):
+        annotation = self.annotate(
+            is_favorited=Exists(
+                Favorite.objects.filter(user_id=user_id, recipe__pk=OuterRef('pk'))
+            ),
+            is_in_shopping_cart=Exists(
+                ShoppingCart.objects.filter(user_id=user_id, recipe__pk=OuterRef('pk'))
+            )
+        )
+        return annotation
 
 
 class Tag(models.Model):
@@ -61,6 +80,7 @@ class Recipe(models.Model):
     is_favorited = models.BooleanField(default=False)
     is_in_shopping_cart = models.BooleanField(default=False)
     pub_date = models.DateTimeField(auto_now_add=True)
+    objects = RecipeQuerySet.as_manager()
 
     class Meta:
         ordering = ['-pub_date']

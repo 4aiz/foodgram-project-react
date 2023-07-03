@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='DEFAULT_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['158.160.22.0', '127.0.0.1', 'localhost', ]
+ALLOWED_HOSTS = ['158.160.22.0', '127.0.0.1', 'localhost', '4aizFoodgram.hidehost.me']
 
 
 # Application definition

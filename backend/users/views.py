@@ -8,8 +8,8 @@ from rest_framework.viewsets import ViewSet
 from recipe.models import Follow
 
 from .models import User
-from .serializers import (UserFollowSerializer, SetPasswordSerializer,
-                          UserCreateSerializer)
+from .serializers import (SetPasswordSerializer, UserCreateSerializer,
+                          UserFollowSerializer)
 
 
 class UserCreateViewSet(viewsets.ModelViewSet):

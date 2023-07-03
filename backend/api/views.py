@@ -1,4 +1,4 @@
-from django.db.models import Sum, F
+from django.db.models import F, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,14 +8,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from recipe.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag, RecipeIngredient
+from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                           ShoppingCart, Tag)
 
 from .filters import IngredientFilterContains, RecipeFilter
 from .pagination import Pagination
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeReadlSerializer, RecipeShortSerializer,
                           TagSerializer)
-from .permissions import IsAuthorOrReadOnly
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -24,6 +25,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        user = self.request.user
+        recipes = Recipe.objects
+        tags = self.request.query_params.getlist('tags')
+        is_favorited = self.request.query_params.get('is_favorited')
+        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
+        author = self.request.query_params.get('author')
+        if tags:
+            recipes = recipes.filter_tags(tags)
+        recipes = recipes.add_user_annotation(user.pk)
+        if is_in_shopping_cart:
+            recipes = recipes.filter(is_in_shopping_cart=True)
+        if is_favorited:
+            recipes = recipes.filter(is_favorited=True)
+        if author:
+            recipes = recipes.filter(author=author)
+        return recipes
 
     def get_serializer_class(self):
         if self.action == 'retrieve' or self.action == 'list':
@@ -85,11 +104,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
 
+        if not user.is_authorized():
+            return Response(
+                {'errors': 'Пользователь не авторизован'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         if request.method == 'post':
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
-                    {'detail': 'Рецепт уже в вашем списке покупок'},
-                    status=status.HTTP_200_OK
+                    {'errors': 'Рецепт уже в вашем списке покупок'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
             else:
                 ShoppingCart.objects.create(
@@ -112,24 +137,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             except ShoppingCart.DoesNotExist:
                 return Response(
-                    {'detail': 'Рецепт не найден в Вашем списке покупок'},
-                    status=status.HTTP_404_NOT_FOUND
+                    {'errors': 'Рецепт не найден в Вашем списке покупок'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+
+        if not user.is_authorized():
             return Response(
-                {'detail': 'Рецепт уже в избранном'},
-                status=status.HTTP_200_OK
+                {'errors': 'Пользователь не авторизован'},
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
         if request.method == 'post':
-            Favorite.objects.create(
-                user=user, recipe=recipe
-            )
+            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+                return Response(
+                    {'errors': 'Рецепт уже в избранном'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                Favorite.objects.create(
+                    user=user, recipe=recipe
+                )
 
         else:
             try:
@@ -141,7 +173,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             except Favorite.DoesNotExist:
                 return Response(
-                    {'message': 'Рецепта нет в Вашем избранном'},
+                    {'errors': 'Рецепта нет в Вашем избранном'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
