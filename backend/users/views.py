@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -9,16 +9,24 @@ from recipe.models import Follow
 
 from .models import User
 from .serializers import (SetPasswordSerializer, UserCreateSerializer,
-                          UserFollowSerializer)
+                          UserFollowCreateSerializer, UserFollowReadSerializer)
 
 
-class UserCreateViewSet(viewsets.ModelViewSet):
-    """Creating User"""
-    queryset = User.objects.all()
+class UserViewSet(viewsets.ModelViewSet):
+    """User api"""
+
+    def get_queryset(self):
+        if self.action == 'subscriptions':
+            user = self.request.user
+            return Follow.objects.filter(user=user)
+        elif self.action == 'subscribe':
+            return Follow.objects.all()
+        else:
+            return User.objects.all()
 
     def get_serializer_class(self):
         if self.action in ('subscribe', 'subscriptions'):
-            return UserFollowSerializer
+            return UserFollowCreateSerializer
         else:
             return UserCreateSerializer
 
@@ -39,34 +47,28 @@ class UserCreateViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(
-        detail=True,
-        methods=["post", "delete"],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=True, methods=["post", "delete"])
     def subscribe(self, request, pk):
         following = get_object_or_404(User, id=pk)
-        # serializer = UserFollowSerializer(
-        #     following, data=request.data, context={"request": request}
-        # )
-        # serializer.is_valid(raise_exception=True)
+        user = request.user
+        serializer = UserFollowCreateSerializer(
+            following, data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
         if request.method == "post":
-            Follow.objects.create(user=request.user, following=following)
+            Follow.objects.create(user=user, following=following)
             return Response({'detail': 'Created'}, status=status.HTTP_201_CREATED)
         else:
             Follow.objects.filter(
                 following=following,
-                user=request.user
+                user=user
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False, methods=['get'],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=False, methods=['get'])
     def subscriptions(self, request):
-        user = request.user
-        self.queryset = Follow.objects.filter(user=user)
+        subscriptions = Follow.objects.filter(user=request.user)
+        return Response(UserFollowReadSerializer(subscriptions, many=True).data)
 
 
 class SetPasswordViewSet(ViewSet):

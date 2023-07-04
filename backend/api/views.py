@@ -45,10 +45,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return recipes
 
     def get_serializer_class(self):
-        if self.action == 'retrieve' or self.action == 'list':
-            return RecipeReadlSerializer
-        elif self.action == 'shopping_cart' or self.action == 'favorite':
+        if self.action == 'shopping_cart' or self.action == 'favorite':
             return RecipeShortSerializer
+        elif self.action == 'retrieve' or self.action == 'list':
+            return RecipeReadlSerializer
         return RecipeCreateSerializer
 
     def perform_create(self, serializer):
@@ -101,14 +101,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk):
-        recipe = get_object_or_404(Recipe, id=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-
-        if not user.is_authenticated:
-            return Response(
-                {'errors': 'Пользователь не авторизован'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
         if request.method == 'post':
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
@@ -143,14 +137,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk):
-        recipe = get_object_or_404(Recipe, id=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-
-        if not user.is_authenticated:
-            return Response(
-                {'errors': 'Пользователь не авторизован'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
 
         if request.method == 'post':
             if Favorite.objects.filter(user=user, recipe=recipe).exists():
@@ -168,7 +156,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 favorite = Favorite.objects.get(user=user, recipe=recipe)
                 favorite.delete()
                 return Response(
-                    {'message': 'Рецепт удалено из избранного'},
+                    {'message': 'Рецепт удален из избранного'},
                     status=status.HTTP_204_NO_CONTENT
                 )
             except Favorite.DoesNotExist:
@@ -190,7 +178,7 @@ class TagsViewSet(mixins.RetrieveModelMixin,
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = Pagination
+    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilterContains
     permission_classes = [AllowAny]
