@@ -1,11 +1,23 @@
+from recipe.models import Follow, Recipe
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-
-from recipe.models import Follow
 
 from .models import User
 
 
-class UserCreateSerializer(serializers.ModelSerializer):
+class RecipeShortSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id', 'name', 'image', 'cooking_time'
+        )
+        read_only_fields = (
+            'id', 'name', 'image', 'cooking_time'
+        )
+
+
+class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
@@ -25,23 +37,33 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserFollowCreateSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='following'
-    )
+class SubscriptionSerializer(serializers.ModelSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
+
+    def get_recipes(self, obj):
+        recipes = Recipe.objects.filter(author=obj).all()
+        return RecipeShortSerializer(recipes, many=True).data
+
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        return Follow.objects.filter(user=user, following=obj).exists()
+
+    def get_recipes_count(self, obj):
+        recipes = Recipe.objects.filter(author=obj).all()
+        return len(recipes)
 
     class Meta:
-        model = Follow
-        fields = ('id',)
-
-
-class UserFollowReadSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Follow
-        fields = ('following', )
-        depth = 2
+        model = User
+        fields = (
+            'email', 'id', 'is_subscribed', 'recipes', 'recipes_count',
+            'username', 'first_name', 'last_name'
+        )
+        read_only_fields = (
+            'email', 'id', 'is_subscribed', 'recipes', 'recipes_count',
+            'username', 'first_name', 'last_name'
+        )
 
 
 class SetPasswordSerializer(serializers.Serializer):

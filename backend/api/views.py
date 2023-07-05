@@ -2,21 +2,20 @@ from django.db.models import F, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                           ShoppingCart, Tag)
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                           ShoppingCart, Tag)
-
 from .filters import IngredientFilterContains, RecipeFilter
 from .pagination import Pagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
-                          RecipeReadlSerializer, RecipeShortSerializer,
-                          TagSerializer)
+                          RecipeReadlSerializer, TagSerializer)
+from users.serializers import RecipeShortSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -68,11 +67,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         elif self.action in ('list', 'retrieve'):
             return super().get_permissions()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['GET'])
     def download_shopping_cart(self, request):
         user = request.user
         shopping_cart = RecipeIngredient.objects.filter(
-            recipe__cart__user=user).values(
+            recipe__carts__user=user).values(
             'ingredient__name',
             'ingredient__measurement_unit'
         ).annotate(
@@ -99,12 +98,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return response
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=['POST', 'DELETE'])
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
 
-        if request.method == 'post':
+        if request.method == 'POST':
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
                     {'errors': 'Рецепт уже в вашем списке покупок'},
@@ -119,7 +118,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_201_CREATED
                     )
 
-        elif request.method == 'delete':
+        elif request.method == 'DELETE':
             try:
                 shopping_cart = ShoppingCart.objects.get(
                     user=user, recipe=recipe
@@ -135,12 +134,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=['POST', 'DELETE'])
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
 
-        if request.method == 'post':
+        if request.method == 'POST':
             if Favorite.objects.filter(user=user, recipe=recipe).exists():
                 return Response(
                     {'errors': 'Рецепт уже в избранном'},
@@ -149,6 +148,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             else:
                 Favorite.objects.create(
                     user=user, recipe=recipe
+                )
+                return Response(
+                    {'detail': 'Рецепт добавлен в избранное'},
+                    status=status.HTTP_201_CREATED
                 )
 
         else:

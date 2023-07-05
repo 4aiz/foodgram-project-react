@@ -1,34 +1,31 @@
 from django.shortcuts import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
+
+from recipe.models import Follow
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
-from recipe.models import Follow
-
 from .models import User
-from .serializers import (SetPasswordSerializer, UserCreateSerializer,
-                          UserFollowCreateSerializer, UserFollowReadSerializer)
+from .serializers import (SetPasswordSerializer, UserSerializer, SubscriptionSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """User api"""
 
     def get_queryset(self):
-        if self.action == 'subscriptions':
-            user = self.request.user
-            return Follow.objects.filter(user=user)
-        elif self.action == 'subscribe':
-            return Follow.objects.all()
+        if self.action in ('subscriptions', 'subscribe'):
+            return Follow.objects.filter(user=self.request.user)
         else:
             return User.objects.all()
 
     def get_serializer_class(self):
         if self.action in ('subscribe', 'subscriptions'):
-            return UserFollowCreateSerializer
+            return SubscriptionSerializer
         else:
-            return UserCreateSerializer
+            return UserSerializer
 
     def get_permissions(self):
         if self.action in ('subscribe', 'subscriptions'):
@@ -40,35 +37,58 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get'],
+        methods=['GET'],
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["post", "delete"])
+    @action(detail=True, methods=["POST", "DELETE"])
     def subscribe(self, request, pk):
         following = get_object_or_404(User, id=pk)
         user = request.user
-        serializer = UserFollowCreateSerializer(
+        serializer = SubscriptionSerializer(
             following, data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        if request.method == "post":
-            Follow.objects.create(user=user, following=following)
-            return Response({'detail': 'Created'}, status=status.HTTP_201_CREATED)
+        if request.method == "POST":
+            print(Follow.objects.filter(user=user, following=following).exists())
+            if Follow.objects.filter(user=user, following=following).exists():
+                return Response(
+                    {'errors': 'Невозможно подписаться дважды'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                Follow.objects.create(user=user, following=following)
+                return Response(
+                    {'detail': 'Вы подписались на автора'},
+                    status=status.HTTP_201_CREATED
+                )
         else:
-            Follow.objects.filter(
-                following=following,
-                user=user
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            try:
+                Follow.objects.filter(
+                    user=user,
+                    following=following,
+                ).delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except Follow.DoesNotExist:
+                return Response(
+                    {'errors': 'Вы не подписаны на автора'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['GET'])
     def subscriptions(self, request):
-        subscriptions = Follow.objects.filter(user=request.user)
-        return Response(UserFollowReadSerializer(subscriptions, many=True).data)
+        follow_data = Follow.objects.filter(user=request.user)
+        ids = []
+        for sub in follow_data:
+            ids.append(sub.following.id)
+        subscribed = User.objects.filter(id__in=ids)
+        return Response(SubscriptionSerializer(
+            subscribed,
+            many=True,
+            context={"request": request}).data)
 
 
 class SetPasswordViewSet(ViewSet):

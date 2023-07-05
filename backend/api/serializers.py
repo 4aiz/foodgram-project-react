@@ -2,11 +2,10 @@ import base64
 
 import webcolors
 from django.core.files.base import ContentFile
-from rest_framework import serializers
-
 from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                            ShoppingCart, Tag)
-from users.serializers import UserCreateSerializer
+from rest_framework import serializers
+from users.serializers import UserSerializer
 
 
 class Hex2NameColor(serializers.Field):
@@ -83,8 +82,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(),
         many=True
     )
-    is_favorited = serializers.BooleanField(default=False)
-    is_in_shopping_cart = serializers.BooleanField(default=False)
     ingredients = RecipeIngredientCreateSerializer(many=True)
 
     def validate_ingredients(self, value):
@@ -158,14 +155,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'id', 'tags', 'author', 'ingredients', 'is_favorited',
-            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
+            'id', 'tags', 'author', 'ingredients',
+            'name', 'image', 'text', 'cooking_time'
         )
         read_only_fields = ('author',)
 
 
 class RecipeReadlSerializer(serializers.ModelSerializer):
-    author = UserCreateSerializer()
+    author = UserSerializer()
     tags = TagSerializer(many=True)
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.BooleanField()
@@ -185,13 +182,3 @@ class RecipeReadlSerializer(serializers.ModelSerializer):
         read_only_fields = ('author', )
 
 
-class RecipeShortSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'id', 'name', 'image', 'cooking_time'
-        )
-        read_only_fields = (
-            'id', 'name', 'image', 'cooking_time'
-        )
