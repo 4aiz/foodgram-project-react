@@ -2,9 +2,9 @@ import base64
 
 import webcolors
 from django.core.files.base import ContentFile
-from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                           ShoppingCart, Tag)
 from rest_framework import serializers
+
+from recipe.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.serializers import UserSerializer
 
 
@@ -116,9 +116,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
-        instance.description = validated_data.get('description', instance.description)
+        instance.description = validated_data.get(
+            'description',
+            instance.description
+        )
         instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
+            'cooking_time',
+            instance.cooking_time
         )
 
         if 'tags' in validated_data:
@@ -143,7 +147,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        ingredients = self.fields.pop('ingredients')
+        self.fields.pop('ingredients')
         self.fields['tags'] = TagSerializer(many=True)
         representation = super().to_representation(instance)
 
@@ -180,5 +184,3 @@ class RecipeReadlSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         )
         read_only_fields = ('author', )
-
-

@@ -1,6 +1,8 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from users.views import SetPasswordViewSet, UserViewSet
+
+from users.views import (SetPasswordViewSet, SubscriptionListViewSet,
+                         UserViewSet)
 
 from .views import IngredientViewSet, RecipeViewSet, TagsViewSet
 
@@ -12,6 +14,9 @@ router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(r'users/set_password',
                 SetPasswordViewSet,
                 basename='set_password')
+router.register(r'users/subscriptions',
+                SubscriptionListViewSet,
+                basename='subscriptions')
 router.register(r'users', UserViewSet, basename='users')
 
 app_name = 'api'

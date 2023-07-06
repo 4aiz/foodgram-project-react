@@ -1,34 +1,36 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
-
-from recipe.models import Follow
-from rest_framework import mixins, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
+
+from api.pagination import CustomLimitPagination
+from api.permissions import IsAuthorOrAdminOrReadOnly
+from recipe.models import Follow
 
 from .models import User
-from .serializers import (SetPasswordSerializer, UserSerializer, SubscriptionSerializer)
+from .serializers import (SetPasswordSerializer, SubscriptionSerializer,
+                          UserSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """User api"""
 
     def get_queryset(self):
-        if self.action in ('subscriptions', 'subscribe'):
+        if self.action == 'subscribe':
             return Follow.objects.filter(user=self.request.user)
         else:
             return User.objects.all()
 
     def get_serializer_class(self):
-        if self.action in ('subscribe', 'subscriptions'):
+        if self.action == 'subscribe':
             return SubscriptionSerializer
         else:
             return UserSerializer
 
     def get_permissions(self):
-        if self.action in ('subscribe', 'subscriptions'):
+        if self.action == 'subscribe':
             return [IsAuthenticated()]
         elif self.action in ('create', 'list'):
             return [AllowAny()]
@@ -53,7 +55,6 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         if request.method == "POST":
-            print(Follow.objects.filter(user=user, following=following).exists())
             if Follow.objects.filter(user=user, following=following).exists():
                 return Response(
                     {'errors': 'Невозможно подписаться дважды'},
@@ -78,17 +79,19 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-    @action(detail=False, methods=['GET'])
-    def subscriptions(self, request):
-        follow_data = Follow.objects.filter(user=request.user)
-        ids = []
-        for sub in follow_data:
-            ids.append(sub.following.id)
-        subscribed = User.objects.filter(id__in=ids)
-        return Response(SubscriptionSerializer(
-            subscribed,
-            many=True,
-            context={"request": request}).data)
+
+class SubscriptionListViewSet(mixins.ListModelMixin,
+                              GenericViewSet):
+    pagination_class = CustomLimitPagination
+    permission_classes = [IsAuthorOrAdminOrReadOnly]
+    serializer_class = SubscriptionSerializer
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('^following__user', )
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = User.objects.filter(following__user=user)
+        return qs
 
 
 class SetPasswordViewSet(ViewSet):
@@ -106,6 +109,12 @@ class SetPasswordViewSet(ViewSet):
         if serializer.is_valid():
             new_password = serializer.validated_data['new_password']
             current_password = serializer.validated_data['current_password']
+
+            if new_password == current_password:
+                return Response(
+                    {'detail': 'Новый пароль совпадает с текущим'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             if user.check_password(current_password):
                 user.set_password(new_password)

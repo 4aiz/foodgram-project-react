@@ -1,12 +1,16 @@
 from django.contrib import admin
+
 from users.models import User
 
-from .models import Ingredient, Recipe, Tag
+from .models import Favorite, Ingredient, Recipe, Tag
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('author', 'name')
+    list_display = ('author', 'name', 'in_favorite')
     list_filter = ('author', 'name', 'tags')
+
+    def in_favorite(self, obj):
+        return Favorite.objects.filter(recipe=obj).all().count()
 
 
 class UserAdmin(admin.ModelAdmin):

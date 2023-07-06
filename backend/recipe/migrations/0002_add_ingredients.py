@@ -1,4 +1,5 @@
 from django.db import migrations
+
 from recipe.data_import import INITIAL_INGREDIENTS
 
 

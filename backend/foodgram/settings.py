@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 from pathlib import Path
 
+# from dotenv import load_dotenv
+#
+# load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -39,7 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    'corsheaders',  # Убрать на этапе продакшна
+    # 'corsheaders',  # Убрать на этапе продакшна
     'djoser',
     'recipe',
     'users',
@@ -49,7 +53,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Убрать на этапе продакшна
+    # 'corsheaders.middleware.CorsMiddleware',  # Убрать на этапе продакшна
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -87,10 +91,21 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB', BASE_DIR / 'db.sqlite3'),
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
+        'HOST': os.environ.get('DB_HOST', ''),
         'PORT': os.environ.get('DB_PORT')
     }
 }
+#
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('POSTGRES_DB', 'django'),
+#         'USER': os.getenv('POSTGRES_USER', 'django'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'pass'),
+#         'HOST': os.getenv('DB_HOST', ''),
+#         'PORT': os.getenv('DB_PORT', 5432)
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -138,7 +153,7 @@ STATIC_ROOT = BASE_DIR / 'collected_static'
 
 MEDIA_URL = '/media/'
 
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -161,8 +176,8 @@ DJOSER = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8000',
-]
-
-CORS_URLS_REGEX = r'^/api/.*$'
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:8000',
+# ]
+#
+# CORS_URLS_REGEX = r'^/api/.*$'

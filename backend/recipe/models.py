@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Exists, OuterRef
+
 from users.models import User
 
 
@@ -12,10 +13,16 @@ class RecipeQuerySet(models.QuerySet):
     def add_user_annotation(self, user_id):
         annotation = self.annotate(
             is_favorited=Exists(
-                Favorite.objects.filter(user_id=user_id, recipe__pk=OuterRef('pk'))
+                Favorite.objects.filter(
+                    user_id=user_id,
+                    recipe__pk=OuterRef('pk')
+                )
             ),
             is_in_shopping_cart=Exists(
-                ShoppingCart.objects.filter(user_id=user_id, recipe__pk=OuterRef('pk'))
+                ShoppingCart.objects.filter(
+                    user_id=user_id,
+                    recipe__pk=OuterRef('pk')
+                )
             )
         )
         return annotation
@@ -91,7 +98,7 @@ class RecipeIngredient(models.Model):
         Recipe, on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.DO_NOTHING
+        Ingredient, on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество'
@@ -122,7 +129,7 @@ class Follow(models.Model):
 class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='carts'
     )
     user = models.ForeignKey(
@@ -134,7 +141,7 @@ class ShoppingCart(models.Model):
 class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
     user = models.ForeignKey(
         User,

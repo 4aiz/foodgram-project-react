@@ -2,36 +2,36 @@ from django.db.models import F, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                           ShoppingCart, Tag)
-from rest_framework import mixins, status, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .filters import IngredientFilterContains, RecipeFilter
+from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                           ShoppingCart, Tag)
+from users.serializers import RecipeShortSerializer
+
+from .filters import IngredientFilterContains
 from .pagination import Pagination
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrAdminOrReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeReadlSerializer, TagSerializer)
-from users.serializers import RecipeShortSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = PageNumberPagination
-    # filter_backends = (DjangoFilterBackend,)
-    # filterset_class = RecipeFilter
     permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
         recipes = Recipe.objects
-        tags = self.request.query_params.getlist('tags')
-        is_favorited = self.request.query_params.get('is_favorited')
-        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
-        author = self.request.query_params.get('author')
+        parameters = self.request.query_params
+        tags = parameters.getlist('tags')
+        is_favorited = parameters.get('is_favorited')
+        is_in_shopping_cart = parameters.get('is_in_shopping_cart')
+        author = parameters.get('author')
         if tags:
             recipes = recipes.filter_tags(tags)
         recipes = recipes.add_user_annotation(user.pk)
@@ -59,13 +59,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'shopping_cart',
                 'favorite',
                 'create',
-                'update'
         ):
             return [IsAuthenticated()]
-        elif self.action in ('destroy',):
-            return [IsAuthorOrReadOnly()]
+        elif self.action in ('destroy', 'partial_update', 'update'):
+            return [IsAuthorOrAdminOrReadOnly()]
         elif self.action in ('list', 'retrieve'):
             return super().get_permissions()
+
+    def destroy(self, request, pk):
+        user = request.user
+        recipe = get_object_or_404(Recipe, pk=pk, author=user)
+        recipe.delete()
+        return Response(
+            {'detail': 'Ваш рецепт удален'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
     @action(detail=False, methods=['GET'])
     def download_shopping_cart(self, request):
@@ -114,9 +122,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     user=user, recipe=recipe
                 )
                 return Response(
-                        {'detail': 'Рецепт добавлен в список покупок'},
-                        status=status.HTTP_201_CREATED
-                    )
+                    {'detail': 'Рецепт добавлен в список покупок'},
+                    status=status.HTTP_201_CREATED
+                )
 
         elif request.method == 'DELETE':
             try:
@@ -169,13 +177,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
 
 
-class TagsViewSet(mixins.RetrieveModelMixin,
-                  mixins.ListModelMixin,
-                  viewsets.GenericViewSet):
+class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = Pagination
     permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action in ('retrieve', 'list'):
+            return [AllowAny()]
+        else:
+            return [permissions.IsAdminUser()]
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -184,4 +196,9 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilterContains
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action in ('retrieve', 'list'):
+            return [AllowAny()]
+        else:
+            return [permissions.IsAdminUser()]
