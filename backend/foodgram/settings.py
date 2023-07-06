@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    # 'corsheaders',  # Убрать на этапе продакшна
     'djoser',
     'recipe',
     'users',
@@ -53,7 +52,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',  # Убрать на этапе продакшна
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -95,17 +93,6 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT')
     }
 }
-#
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB', 'django'),
-#         'USER': os.getenv('POSTGRES_USER', 'django'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'pass'),
-#         'HOST': os.getenv('DB_HOST', ''),
-#         'PORT': os.getenv('DB_PORT', 5432)
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -171,13 +158,7 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
-    # 'HIDE_USERS': False,
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:8000',
-# ]
-#
-# CORS_URLS_REGEX = r'^/api/.*$'
