@@ -3,7 +3,6 @@ version: '3.3'
 volumes:
   pg_data:
   static:
-  media:
 
 services:
   db:
@@ -28,5 +27,3 @@ services:
     volumes:
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
-      - media:/media
-
