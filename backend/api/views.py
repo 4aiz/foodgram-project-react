@@ -13,7 +13,7 @@ from users.serializers import RecipeShortSerializer
 
 from .filters import IngredientFilterContains
 from .pagination import Pagination
-from .permissions import IsAuthorOrAdminOrReadOnly
+from .permissions import IsAuthenticatedAuthorOrAdmin, IsAdminOrReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeReadlSerializer, TagSerializer)
 
@@ -61,7 +61,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ):
             return [IsAuthenticated()]
         elif self.action in ('destroy', 'partial_update', 'update'):
-            return [IsAuthorOrAdminOrReadOnly()]
+            return [IsAuthenticatedAuthorOrAdmin()]
         elif self.action in ('list', 'retrieve'):
             return super().get_permissions()
 
@@ -180,13 +180,7 @@ class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = Pagination
-    permission_classes = [AllowAny]
-
-    def get_permissions(self):
-        if self.action in ('retrieve', 'list'):
-            return [AllowAny()]
-        else:
-            return [permissions.IsAdminUser()]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class IngredientViewSet(viewsets.ModelViewSet):

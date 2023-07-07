@@ -3,6 +3,9 @@ from django.db.models import Exists, OuterRef
 from users.models import User
 
 
+MAX_LENGTH = 200
+
+
 class RecipeQuerySet(models.QuerySet):
     def filter_tags(self, tags):
         if tags:
@@ -29,7 +32,7 @@ class RecipeQuerySet(models.QuerySet):
 
 class Tag(models.Model):
     name = models.CharField(max_length=256, db_index=True,
-                            verbose_name='Имя тега',
+                            verbose_name='имя тега',
                             unique=True)
     color = models.CharField(max_length=16)
     slug = models.SlugField('Индификатор', unique=True)
@@ -37,50 +40,56 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['id']
+
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=200, verbose_name='Название ингредиента'
+        max_length=MAX_LENGTH, verbose_name='название ингредиента'
     )
     measurement_unit = models.CharField(
-        max_length=200,
-        verbose_name='Единица измерения',
+        max_length=MAX_LENGTH,
+        verbose_name='единица измерения',
         help_text='Укажите единицу измерения'
     )
 
     def __str__(self):
         return f'{self.name} ({self.measurement_unit})'
 
+    class Meta:
+        ordering = ['name']
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(
-        User, verbose_name='Автор',
+        User, verbose_name='автор',
         on_delete=models.CASCADE,
         related_name='recipes'
     )
     tags = models.ManyToManyField(
-        Tag, verbose_name='Тег',
+        Tag, verbose_name='тег',
         blank=True,
         related_name='recipes'
     )
     name = models.CharField(
         max_length=256, db_index=True,
-        verbose_name='Название блюда',
+        verbose_name='название блюда',
         help_text='Укажите название блюда'
     )
     image = models.ImageField(
         upload_to='images/'
     )
     description = models.TextField(
-        blank=True, verbose_name='Описание рецепта'
+        blank=True, verbose_name='описание рецепта'
     )
     ingredients = models.ManyToManyField(
-        Ingredient, verbose_name='Ингредиент',
+        Ingredient, verbose_name='ингредиент',
         blank=True,
         through='RecipeIngredient',
     )
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время готовки'
+        verbose_name='время готовки'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     objects = RecipeQuerySet.as_manager()
@@ -100,7 +109,7 @@ class RecipeIngredient(models.Model):
         Ingredient, on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
-        verbose_name='Количество'
+        verbose_name='количество'
     )
 
 
@@ -108,7 +117,7 @@ class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Подписчик',
+        verbose_name='подписчик',
     )
     following = models.ForeignKey(
         User,
@@ -146,3 +155,11 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe__user'],
+                name='unique_user_recipe'
+            )
+        ]

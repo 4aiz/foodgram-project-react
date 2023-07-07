@@ -1,5 +1,5 @@
 from api.pagination import CustomLimitPagination
-from api.permissions import IsAuthorOrAdminOrReadOnly
+from api.permissions import IsAuthenticatedAuthorOrAdmin
 from django.shortcuts import get_object_or_404
 from recipe.models import Follow
 from rest_framework import filters, mixins, status, viewsets
@@ -82,7 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class SubscriptionListViewSet(mixins.ListModelMixin,
                               GenericViewSet):
     pagination_class = CustomLimitPagination
-    permission_classes = [IsAuthorOrAdminOrReadOnly]
+    permission_classes = [IsAuthenticatedAuthorOrAdmin]
     serializer_class = SubscriptionSerializer
     filter_backends = (filters.SearchFilter, )
     search_fields = ('^following__user', )
