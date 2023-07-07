@@ -2,9 +2,8 @@ import base64
 
 import webcolors
 from django.core.files.base import ContentFile
-from rest_framework import serializers
-
 from recipe.models import Ingredient, Recipe, RecipeIngredient, Tag
+from rest_framework import serializers
 from users.serializers import UserSerializer
 
 
