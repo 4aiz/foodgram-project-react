@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Exists, OuterRef
-from users.models import User
 
+from users.models import User
 
 MAX_LENGTH = 200
 
