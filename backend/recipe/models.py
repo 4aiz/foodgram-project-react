@@ -3,7 +3,8 @@ from django.db.models import Exists, OuterRef
 
 from users.models import User
 
-MAX_LENGTH = 200
+
+CHARFIELD_LENGTH = 200
 
 
 class RecipeQuerySet(models.QuerySet):
@@ -31,7 +32,7 @@ class RecipeQuerySet(models.QuerySet):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=256, db_index=True,
+    name = models.CharField(max_length=CHARFIELD_LENGTH, db_index=True,
                             verbose_name='имя тега',
                             unique=True)
     color = models.CharField(max_length=16)
@@ -41,15 +42,15 @@ class Tag(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['id']
+        ordering = ['name']
 
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=MAX_LENGTH, verbose_name='название ингредиента'
+        max_length=CHARFIELD_LENGTH, verbose_name='название ингредиента'
     )
     measurement_unit = models.CharField(
-        max_length=MAX_LENGTH,
+        max_length=CHARFIELD_LENGTH,
         verbose_name='единица измерения',
         help_text='Укажите единицу измерения'
     )
@@ -73,7 +74,7 @@ class Recipe(models.Model):
         related_name='recipes'
     )
     name = models.CharField(
-        max_length=256, db_index=True,
+        max_length=CHARFIELD_LENGTH, db_index=True,
         verbose_name='название блюда',
         help_text='Укажите название блюда'
     )

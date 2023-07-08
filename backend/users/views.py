@@ -8,7 +8,6 @@ from rest_framework.viewsets import GenericViewSet, ViewSet
 from api.pagination import CustomLimitPagination
 from api.permissions import IsAuthenticatedAuthorOrAdmin
 from recipe.models import Follow
-
 from .models import User
 from .serializers import (SetPasswordSerializer, SubscriptionSerializer,
                           UserSerializer)
