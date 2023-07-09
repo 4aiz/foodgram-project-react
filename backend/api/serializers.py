@@ -4,7 +4,12 @@ import webcolors
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from recipe.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipe.models import (Ingredient,
+                           Recipe,
+                           RecipeIngredient,
+                           Tag,
+                           Favorite,
+                           ShoppingCart)
 from users.serializers import UserSerializer
 
 
@@ -114,25 +119,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.description = validated_data.get(
-            'description',
-            instance.description
-        )
-        instance.cooking_time = validated_data.get(
-            'cooking_time',
-            instance.cooking_time
-        )
-
         if 'tags' in validated_data:
             tags = validated_data.pop('tags')
             instance.tags.set(tags)
 
-        if 'ingredients' not in validated_data:
-            instance.save()
-            return instance
-        else:
+        if 'ingredients' in validated_data:
             instance.ingredients.clear()
             ingredients_data = validated_data.pop('ingredients')
             recipe_ingredients = [
@@ -142,9 +133,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     amount=ingredient.get('amount'))
                 for ingredient in ingredients_data
             ]
-
             RecipeIngredient.objects.bulk_create(recipe_ingredients)
-            return super().update(instance, validated_data)
+
+        instance.save()
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         self.fields.pop('ingredients')
@@ -169,9 +161,23 @@ class RecipeReadlSerializer(serializers.ModelSerializer):
     author = UserSerializer()
     tags = TagSerializer(many=True)
     ingredients = serializers.SerializerMethodField()
-    is_favorited = serializers.BooleanField()
-    is_in_shopping_cart = serializers.BooleanField()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
     text = serializers.CharField(source='description')
+
+    def get_is_favorited(self, obj):
+        user = self.context['request'].user
+        return Favorite.objects.filter(
+            user=user,
+            recipe=obj
+        ).exists()  # recipe__favorites__user=user
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context['request'].user
+        return ShoppingCart.objects.filter(
+            user=user,
+            recipe=obj
+        ).exists()  # recipe__carts__user=user
 
     def get_ingredients(self, obj):
         return RecipeIngredientReadSerializer(

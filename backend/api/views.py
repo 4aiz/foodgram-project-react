@@ -2,7 +2,7 @@ from django.db.models import F, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from recipe.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                            ShoppingCart, Tag)
 from users.serializers import RecipeShortSerializer
-from .filters import IngredientFilterContains
+from .filters import IngredientFilterContains, RecipeFilter
 from .pagination import Pagination
 from .permissions import IsAdminOrReadOnly, IsAuthenticatedAuthorOrAdmin
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
@@ -22,25 +22,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = PageNumberPagination
     permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        user = self.request.user
-        recipes = Recipe.objects
-        parameters = self.request.query_params
-        tags = parameters.getlist('tags')
-        is_favorited = parameters.get('is_favorited')
-        is_in_shopping_cart = parameters.get('is_in_shopping_cart')
-        author = parameters.get('author')
-        if tags:
-            recipes = recipes.filter_tags(tags)
-        recipes = recipes.add_user_annotation(user.pk)
-        if is_in_shopping_cart:
-            recipes = recipes.filter(is_in_shopping_cart=True)
-        if is_favorited:
-            recipes = recipes.filter(is_favorited=True)
-        if author:
-            recipes = recipes.filter(author=author)
-        return recipes
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action == 'shopping_cart' or self.action == 'favorite':
@@ -111,7 +94,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            if ShoppingCart.objects.filter(
+                    recipe__carts__recipe=recipe
+            ).exists():
                 return Response(
                     {'errors': 'Рецепт уже в вашем списке покупок'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -147,7 +132,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            if Favorite.objects.filter(
+                    recipe__favorites__recipe=recipe
+            ).exists():
                 return Response(
                     {'errors': 'Рецепт уже в избранном'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -189,9 +176,4 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilterContains
-
-    def get_permissions(self):
-        if self.action in ('retrieve', 'list'):
-            return [AllowAny()]
-        else:
-            return [permissions.IsAdminUser()]
+    permission_classes = [IsAdminOrReadOnly]

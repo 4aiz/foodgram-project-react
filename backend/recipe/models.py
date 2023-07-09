@@ -1,34 +1,9 @@
 from django.db import models
-from django.db.models import Exists, OuterRef
 
 from users.models import User
 
 
 CHARFIELD_LENGTH = 200
-
-
-class RecipeQuerySet(models.QuerySet):
-    def filter_tags(self, tags):
-        if tags:
-            return self.filter(tags__slug__in=tags).distinct()
-        return self
-
-    def add_user_annotation(self, user_id):
-        annotation = self.annotate(
-            is_favorited=Exists(
-                Favorite.objects.filter(
-                    user_id=user_id,
-                    recipe__pk=OuterRef('pk')
-                )
-            ),
-            is_in_shopping_cart=Exists(
-                ShoppingCart.objects.filter(
-                    user_id=user_id,
-                    recipe__pk=OuterRef('pk')
-                )
-            )
-        )
-        return annotation
 
 
 class Tag(models.Model):
@@ -93,7 +68,7 @@ class Recipe(models.Model):
         verbose_name='время готовки'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
-    objects = RecipeQuerySet.as_manager()
+    # objects = RecipeQuerySet.as_manager()
 
     class Meta:
         ordering = ['-pub_date']
@@ -143,7 +118,7 @@ class ShoppingCart(models.Model):
     )
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
 
@@ -151,16 +126,17 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
+        related_name='favorites'
     )
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe__user'],
+                fields=['user', 'recipe'],
                 name='unique_user_recipe'
             )
         ]
