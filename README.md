@@ -76,4 +76,13 @@ python3 manage.py runserver
 
 ### Список используемых библиотек:
 
-* Django==3.2.3
+* asgiref==3.7.2
+* atomicwrites==1.4.1
+* attrs==22.1.0
+* certifi==2022.9.24
+* cffi==1.15.1
+* chardet==3.0.4
+* click==8.1.3
+* colorama==0.4.6
+* coreapi==2.3.3
+* coreschema==0.0.4
