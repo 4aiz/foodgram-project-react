@@ -166,13 +166,17 @@ class RecipeReadlSerializer(serializers.ModelSerializer):
     text = serializers.CharField(source='description')
 
     def get_is_favorited(self, obj):
+        user = self.context['request'].user
         return Favorite.objects.filter(
-            recipe__favorites__recipe=obj
+            recipe=obj,
+            user=user
         ).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        user = self.context['request'].user
         return ShoppingCart.objects.filter(
-            recipe__carts__recipe=obj
+            recipe=obj,
+            user=user
         ).exists()
 
     def get_ingredients(self, obj):
