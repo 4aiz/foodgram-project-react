@@ -94,7 +94,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             if ShoppingCart.objects.filter(
-                    recipe__carts__recipe=recipe
+                    recipe__carts__recipe=recipe,
+                    user=user
             ).exists():
                 return Response(
                     {'errors': 'Рецепт уже в вашем списке покупок'},
@@ -132,7 +133,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             if Favorite.objects.filter(
-                    recipe__favorites__recipe=recipe
+                    recipe__favorites__recipe=recipe,
+                    user=user
             ).exists():
                 return Response(
                     {'errors': 'Рецепт уже в избранном'},
