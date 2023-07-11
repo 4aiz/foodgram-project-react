@@ -89,6 +89,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     ingredients = RecipeIngredientCreateSerializer(many=True)
 
+    def validate_cooking_time(self, value):
+        if not value or value <= 0:
+            raise serializers.ValidationError(
+                'Минимальное время готовки - 1 минута'
+            )
+        return value
+
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
